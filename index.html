@@ -36,16 +36,19 @@
         .risk-dot { width: 7px; height: 7px; border-radius: 9999px; display: inline-block; flex-shrink: 0; }
 
         .print-only { display: none; }
+        .print-spacer { display: none; }
         tfoot { display: none; }
 
         /* ============ YAZDIRMA (Yatay A4) ============ */
         @media print {
-            @page { size: A4 landscape; margin: 9mm 11mm; }
+            /* margin: 0 → tarayıcının kendi üstbilgi/altbilgisi (başlık, tarih, URL) kağıda basılamaz.
+               Sayfa boşlukları aşağıda body ve thead/tfoot içinden veriliyor. */
+            @page { size: A4 landscape; margin: 0; }
 
             nav, #dashboard, #screenFooter, .no-print { display: none !important; }
             .print-only { display: block !important; }
 
-            body { background: #fff !important; margin: 0; padding: 0; font-size: 9pt; }
+            body { background: #fff !important; margin: 0; padding: 8mm 11mm 6mm; font-size: 9pt; }
             main { max-width: 100% !important; width: 100% !important; margin: 0 !important; padding: 0 !important; }
             #tableCard { border: none !important; border-radius: 0 !important; box-shadow: none !important; overflow: visible !important; }
             #tableScroll { overflow: visible !important; }
@@ -54,6 +57,9 @@
             thead { display: table-header-group; }
             tfoot { display: table-footer-group; }
             th { background: #f1f5f9 !important; color: #000 !important; border-bottom: 1.5px solid #000 !important; padding: 3px 6px !important; font-size: 7pt !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+            .print-spacer { display: table-row; }
+            .print-spacer th { height: 6mm; background: #fff !important; border: 0 !important; padding: 0 !important; }
+            tfoot td { border: 0 !important; padding: 2mm 6px 6mm !important; }
             td { padding: 3px 6px !important; border-bottom: 0.5px solid #d4d4d8 !important; vertical-align: top; }
             tr { page-break-inside: avoid; break-inside: avoid; }
 
@@ -108,7 +114,7 @@
                 </div>
                 <div>
                     <h1 class="text-lg font-bold tracking-tight leading-none">GÖĞÜS CERRAHİSİ PORTAL</h1>
-                    <p class="text-[10px] text-blue-400 font-semibold tracking-[0.2em] mt-1">KLİNİK ORDER &amp; UYGULAMA REHBERİ · v4.0</p>
+                    <p class="text-[10px] text-blue-400 font-semibold tracking-[0.2em] mt-1">KLİNİK ORDER &amp; UYGULAMA REHBERİ</p>
                 </div>
             </div>
 
@@ -185,6 +191,7 @@
             <div class="overflow-x-auto" id="tableScroll">
                 <table class="w-full text-left border-collapse min-w-[1080px]">
                     <thead>
+                        <tr class="print-spacer"><th colspan="6"></th></tr>
                         <tr class="bg-slate-50 text-slate-500 text-[10px] uppercase font-bold tracking-wider">
                             <th class="px-5 py-3.5 w-[16%]">İlaç (Etken Madde)</th>
                             <th class="px-5 py-3.5 w-[15%]">Endikasyon / Senaryo</th>
@@ -198,7 +205,7 @@
                     <tfoot>
                         <tr>
                             <td colspan="6" class="text-[6.5pt] text-slate-500 pt-1">
-                                Göğüs Cerrahisi Klinik İlaç Uygulama Rehberi v4.0 — Karar desteği amaçlıdır; nihai doz ve uygulama için güncel Kısa Ürün Bilgisi (KÜB) ve kurum protokolleri esastır. Böbrek/karaciğer yetmezliğinde doz ayarını kontrol ediniz.
+                                Bu rehber karar desteği amaçlıdır; nihai doz ve uygulama için güncel Kısa Ürün Bilgisi (KÜB) ve kurum protokolleri esastır. Böbrek/karaciğer yetmezliğinde doz ayarını kontrol ediniz.
                             </td>
                         </tr>
                     </tfoot>
