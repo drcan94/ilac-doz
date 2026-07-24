@@ -3,269 +3,438 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Gögüs Cerrahisi | Klinik İlaç & Yazdırma Portalı</title>
+    <title>Göğüs Cerrahisi | Klinik İlaç Uygulama Rehberi</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&family=JetBrains+Mono:wght@500&display=swap');
-        
-        body { font-family: 'Inter', sans-serif; background-color: #fcfcf9; }
-        .mono { font-family: 'JetBrains Mono', monospace; }
-        
-        .chart-container { position: relative; width: 100%; max-width: 100%; height: 250px; }
-        .drug-row:hover { background-color: #f8fafc; border-left: 4px solid #3b82f6; cursor: pointer; }
-        .cat-btn.active { background-color: #1e293b !important; color: white !important; }
+        @import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@500;600&display=swap');
 
-        /* Yazdırma Kuralları */
-        @media print {
-            nav, #filterArea, #chartArea, .no-print, button, .alert-banner {
-                display: none !important;
-            }
-            body { background-color: white !important; margin: 0; padding: 0; }
-            .container { max-width: 100% !important; width: 100% !important; margin: 0 !important; padding: 10px !important; }
-            .print-header { display: block !important; margin-bottom: 20px; border-bottom: 2px solid black; padding-bottom: 10px; }
-            table { font-size: 9pt !important; border: 1px solid #ccc !important; }
-            th { background-color: #f2f2f2 !important; color: black !important; }
-            td { padding: 4px 8px !important; border-bottom: 1px solid #eee !important; }
-            .risk-badge { border: 1px solid black !important; color: black !important; padding: 1px 4px !important; }
-            tr { page-break-inside: avoid; }
+        :root {
+            --ink: #0b1526;
+            --paper: #f7f7f4;
+            --accent: #2563eb;
+            --risk: #dc2626;
         }
 
-        .print-header { display: none; }
+        body { font-family: 'IBM Plex Sans', sans-serif; background-color: var(--paper); }
+        .mono { font-family: 'IBM Plex Mono', monospace; }
+
+        .chart-wrap { position: relative; width: 100%; height: 220px; }
+
+        .drug-row { border-left: 3px solid transparent; }
+        .drug-row:hover { background-color: #f8fafc; border-left-color: var(--accent); }
+
+        .cat-btn { transition: all .15s ease; }
+        .cat-btn.active { background-color: #ffffff !important; color: #0b1526 !important; }
+
+        .cat-header td {
+            background: #eef2f7;
+            border-top: 1px solid #cbd5e1;
+            border-bottom: 1px solid #e2e8f0;
+        }
+        .cat-dot { width: 10px; height: 10px; border-radius: 3px; display: inline-block; }
+        .risk-dot { width: 7px; height: 7px; border-radius: 9999px; display: inline-block; flex-shrink: 0; }
+
+        .print-only { display: none; }
+        tfoot { display: none; }
+
+        /* ============ YAZDIRMA (Yatay A4) ============ */
+        @media print {
+            @page { size: A4 landscape; margin: 9mm 11mm; }
+
+            nav, #dashboard, #screenFooter, .no-print { display: none !important; }
+            .print-only { display: block !important; }
+
+            body { background: #fff !important; margin: 0; padding: 0; font-size: 9pt; }
+            main { max-width: 100% !important; width: 100% !important; margin: 0 !important; padding: 0 !important; }
+            #tableCard { border: none !important; border-radius: 0 !important; box-shadow: none !important; overflow: visible !important; }
+            #tableScroll { overflow: visible !important; }
+
+            table { width: 100% !important; min-width: 0 !important; border-collapse: collapse !important; font-size: 8.2pt !important; }
+            thead { display: table-header-group; }
+            tfoot { display: table-footer-group; }
+            th { background: #f1f5f9 !important; color: #000 !important; border-bottom: 1.5px solid #000 !important; padding: 3px 6px !important; font-size: 7pt !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+            td { padding: 3px 6px !important; border-bottom: 0.5px solid #d4d4d8 !important; vertical-align: top; }
+            tr { page-break-inside: avoid; break-inside: avoid; }
+
+            .cat-header { break-after: avoid; }
+            .cat-header td {
+                background: #e2e8f0 !important;
+                border-top: 1.5px solid #000 !important;
+                border-bottom: 1px solid #64748b !important;
+                padding: 4px 6px !important;
+                -webkit-print-color-adjust: exact; print-color-adjust: exact;
+            }
+            .cat-dot, .risk-dot { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+
+            .risk-badge { border: 1px solid #000 !important; background: transparent !important; color: #000 !important; padding: 0px 4px !important; border-radius: 3px !important; font-size: 6.5pt !important; }
+            .risk-badge.high { background: #000 !important; color: #fff !important; }
+            .warn-cell { color: #000 !important; }
+            .path-cell { color: #000 !important; }
+
+            .print-header { margin-bottom: 4mm; border-bottom: 2px solid #000; padding-bottom: 2mm; }
+        }
     </style>
 </head>
 <body class="text-slate-900">
 
-    <!-- Yazdırma Başlığı (Sadece Kağıtta Görünür) -->
-    <div class="print-header">
-        <h1 class="text-2xl font-bold text-center">GÖĞÜS CERRAHİSİ KLİNİK İLAÇ UYGULAMA REHBERİ</h1>
-        <p class="text-center text-xs mt-1">Oluşturma Tarihi: <span id="printDate"></span> | Bu belge güncel klinik protokolleri içerir.</p>
+    <!-- ============ YAZDIRMA BAŞLIĞI (sadece kağıtta) ============ -->
+    <div class="print-only print-header">
+        <div class="flex items-end justify-between">
+            <div>
+                <h1 class="text-[15pt] font-bold tracking-tight">GÖĞÜS CERRAHİSİ — KLİNİK İLAÇ UYGULAMA REHBERİ</h1>
+                <p class="text-[8pt] mt-1">
+                    Kapsam: <strong id="pScope">TÜM KATEGORİLER</strong>
+                    <span id="pQueryWrap" class="hidden"> &nbsp;•&nbsp; Arama filtresi: "<strong id="pQuery"></strong>"</span>
+                    &nbsp;•&nbsp; Listelenen: <strong id="pCount">0</strong> kalem
+                    (<strong id="pHigh">0</strong> yüksek riskli)
+                </p>
+            </div>
+            <div class="text-right text-[8pt]">
+                <p>Yazdırma tarihi: <strong id="printDate"></strong></p>
+                <p class="mt-0.5">■ = Yüksek Riskli İlaç (pompa / çift kontrol / yakın izlem)</p>
+            </div>
+        </div>
     </div>
 
-    <!-- Üst Navigasyon -->
-    <nav class="bg-[#0f172a] text-white sticky top-0 z-50 border-b border-blue-500/20">
-        <div class="container mx-auto px-4 py-4 flex flex-col md:flex-row justify-between items-center gap-4">
-            <div class="flex items-center space-x-3">
-                <div class="bg-blue-600 p-2 rounded-xl">🩺</div>
+    <!-- ============ ÜST BAR ============ -->
+    <nav class="text-white sticky top-0 z-50 border-b border-white/10" style="background: var(--ink);">
+        <div class="max-w-7xl mx-auto px-4 py-3.5 flex flex-col lg:flex-row justify-between items-center gap-3">
+            <div class="flex items-center gap-3 self-start lg:self-auto">
+                <div class="bg-blue-600 p-2 rounded-xl">
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-5 h-5">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M3 12h4l3 8 4-16 3 8h4" />
+                    </svg>
+                </div>
                 <div>
-                    <h1 class="text-xl font-bold tracking-tight uppercase">Göğüs Cerrahisi Portal</h1>
-                    <p class="text-[10px] text-blue-400 font-bold tracking-widest">GÜNCEL ORDER & REHBER v3.0</p>
+                    <h1 class="text-lg font-bold tracking-tight leading-none">GÖĞÜS CERRAHİSİ PORTAL</h1>
+                    <p class="text-[10px] text-blue-400 font-semibold tracking-[0.2em] mt-1">KLİNİK ORDER &amp; UYGULAMA REHBERİ · v4.0</p>
                 </div>
             </div>
-            
-            <div class="relative w-full md:w-1/3">
-                <input type="text" id="mainSearch" placeholder="İlaç veya senaryo ara..." 
-                       class="w-full bg-slate-800 border border-slate-700 rounded-2xl py-3 px-12 focus:ring-2 focus:ring-blue-500 outline-none text-sm">
-                <span class="absolute left-4 top-3.5 opacity-40">🔍</span>
+
+            <div class="relative w-full lg:w-96">
+                <input type="text" id="mainSearch" placeholder="İlaç, endikasyon veya uyarı ara…" aria-label="İlaç ara"
+                       class="w-full bg-white/5 border border-white/15 rounded-xl py-2.5 pl-10 pr-4 focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none text-sm placeholder:text-slate-500">
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-4 h-4 absolute left-3.5 top-3 text-slate-500">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.607 10.607z" />
+                </svg>
             </div>
 
-            <button onclick="window.print()" class="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-2xl font-bold text-xs flex items-center gap-2 transition shadow-lg shadow-blue-500/20">
-                <span>🖨️</span> TABLOYU YAZDIR
+            <button onclick="window.print()" class="w-full lg:w-auto bg-blue-600 hover:bg-blue-500 text-white px-5 py-2.5 rounded-xl font-bold text-xs flex items-center justify-center gap-2 transition shadow-lg shadow-blue-900/40">
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-4 h-4">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M6.72 13.829c-.24.03-.48.062-.72.096m.72-.096a42.415 42.415 0 0110.56 0m-10.56 0L6.34 18m10.94-4.171c.24.03.48.062.72.096m-.72-.096L17.66 18m0 0l.229 2.523a1.125 1.125 0 01-1.12 1.227H7.231c-.662 0-1.18-.568-1.12-1.227L6.34 18m11.318 0h1.091A2.25 2.25 0 0021 15.75V9.456c0-1.081-.768-2.015-1.837-2.175a48.055 48.055 0 00-1.913-.247M6.34 18H5.25A2.25 2.25 0 013 15.75V9.456c0-1.081.768-2.015 1.837-2.175a48.041 48.041 0 011.913-.247m10.5 0a48.536 48.536 0 00-10.5 0m10.5 0V3.375c0-.621-.504-1.125-1.125-1.125h-8.25c-.621 0-1.125.504-1.125 1.125v3.659M18 10.5h.008v.008H18V10.5z" />
+                </svg>
+                YAZDIR · YATAY A4
             </button>
         </div>
     </nav>
 
-    <main class="container mx-auto px-4 py-6">
-        
-        <!-- Dashboard Paneli -->
-        <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 mb-8">
-            <div class="lg:col-span-3 bg-white p-6 rounded-[32px] shadow-sm border border-slate-200" id="chartArea">
-                <h3 class="text-[10px] font-bold text-slate-400 uppercase mb-4 tracking-widest text-center">Dağılım Analizi</h3>
-                <div class="chart-container">
+    <main class="max-w-7xl mx-auto px-4 py-6">
+
+        <!-- ============ DASHBOARD ============ -->
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-5 mb-6" id="dashboard">
+
+            <!-- Dağılım kartı -->
+            <div class="lg:col-span-4 bg-white p-6 rounded-3xl border border-slate-200/80 shadow-sm">
+                <h3 class="text-[10px] font-bold text-slate-400 uppercase tracking-[0.2em] mb-4">Kategori Dağılımı</h3>
+                <div class="chart-wrap">
                     <canvas id="categoryChart"></canvas>
+                    <div class="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
+                        <span id="chartTotal" class="text-3xl font-bold tracking-tight">0</span>
+                        <span class="text-[10px] text-slate-400 font-semibold uppercase tracking-widest">kalem</span>
+                    </div>
                 </div>
-                <div class="mt-4 pt-4 border-t border-slate-50 space-y-2">
-                    <div class="flex justify-between text-xs"><span class="text-slate-500">Toplam Kalem:</span> <span id="totalCount" class="font-bold">0</span></div>
-                    <div class="flex justify-between text-xs"><span class="text-slate-500">Kritik Riskli:</span> <span id="highRiskCount" class="font-bold text-red-600">0</span></div>
+                <ul id="chartLegend" class="mt-4 space-y-1.5 text-xs"></ul>
+                <div class="mt-4 pt-4 border-t border-slate-100 grid grid-cols-3 gap-2 text-center">
+                    <div>
+                        <p id="totalCount" class="text-lg font-bold">0</p>
+                        <p class="text-[9px] text-slate-400 font-semibold uppercase tracking-wider">Toplam</p>
+                    </div>
+                    <div>
+                        <p id="listedCount" class="text-lg font-bold text-blue-600">0</p>
+                        <p class="text-[9px] text-slate-400 font-semibold uppercase tracking-wider">Listelenen</p>
+                    </div>
+                    <div>
+                        <p id="highRiskCount" class="text-lg font-bold text-red-600">0</p>
+                        <p class="text-[9px] text-slate-400 font-semibold uppercase tracking-wider">Yüksek Risk</p>
+                    </div>
                 </div>
             </div>
 
-            <div class="lg:col-span-9 space-y-6" id="filterArea">
-                <div class="bg-slate-900 rounded-[32px] p-8 text-white shadow-2xl relative overflow-hidden">
-                    <h2 class="text-3xl font-bold mb-2">Klinik Order Filtresi</h2>
-                    <p class="text-slate-400 text-sm mb-6 max-w-xl">Aşağıdan kategori seçerek listeyi daraltabilir, ardından "Yazdır" butonu ile sadece seçili listeyi kağıda dökebilirsiniz.</p>
-                    <div class="flex flex-wrap gap-2" id="filterBox">
-                        <button class="cat-btn active px-4 py-2 rounded-xl text-[10px] font-bold bg-white/10 hover:bg-white/20 transition" data-cat="all">TÜMÜ</button>
-                        <button class="cat-btn px-4 py-2 rounded-xl text-[10px] font-bold bg-white/10 hover:bg-white/20 transition" data-cat="Mayi">MAYİ & TPN</button>
-                        <button class="cat-btn px-4 py-2 rounded-xl text-[10px] font-bold bg-white/10 hover:bg-white/20 transition" data-cat="Antibiyotik">ANTİBİYOTİKLER</button>
-                        <button class="cat-btn px-4 py-2 rounded-xl text-[10px] font-bold bg-white/10 hover:bg-white/20 transition" data-cat="Analjezik">ANALJEZİK & SEDASYON</button>
-                        <button class="cat-btn px-4 py-2 rounded-xl text-[10px] font-bold bg-white/10 hover:bg-white/20 transition" data-cat="Kardiyo">KARDİYOVASKÜLER</button>
-                        <button class="cat-btn px-4 py-2 rounded-xl text-[10px] font-bold bg-white/10 hover:bg-white/20 transition" data-cat="Solunum">SOLUNUM & GİS</button>
-                    </div>
+            <!-- Filtre konsolu -->
+            <div class="lg:col-span-8 space-y-4">
+                <div class="rounded-3xl p-7 text-white shadow-xl relative overflow-hidden" style="background: var(--ink);">
+                    <h2 class="text-2xl font-bold tracking-tight mb-1.5">Klinik Order Filtresi</h2>
+                    <p class="text-slate-400 text-sm mb-5 max-w-2xl leading-relaxed">Kategori seçerek listeyi daraltın; "Yazdır" ekrandaki listeyi kategori başlıklarıyla, <span class="text-white font-semibold">yatay A4</span> formatında kağıda döker.</p>
+                    <div class="flex flex-wrap gap-2" id="filterBox"></div>
                 </div>
 
-                <div class="alert-banner bg-amber-50 border-l-4 border-amber-500 p-5 rounded-2xl flex items-start gap-4">
-                    <span class="text-2xl">🚨</span>
+                <div class="bg-amber-50 border-l-4 border-amber-500 p-4 rounded-2xl flex items-start gap-3">
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-5 h-5 text-amber-600 flex-shrink-0 mt-0.5">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126zM12 15.75h.007v.008H12v-.008z" />
+                    </svg>
                     <p class="text-xs text-amber-900 leading-relaxed">
-                        <strong>Önemli:</strong> Tüm infüzyonlarda <strong>flebit kontrolü</strong> esastır. Potasyum (KCl) ve Kalsiyum uygulamaları 
-                        asla hızlı bolus yapılamaz. TPN (N4-N9) hazırlıklarında sterilizasyona azami dikkat edilmelidir.
+                        <strong>Kritik hatırlatma:</strong> Konsantre potasyum (KCl) ve kalsiyum <strong>asla İV bolus verilmez</strong>; elektrolit ve vazoaktif infüzyonlar pompa ile uygulanır ve flebit yönünden izlenir. TPN hazırlığı ve bağlantılarında aseptik teknik esastır. Bu tablo klinik karar desteğidir; nihai doz için güncel KÜB ve kurum protokolü geçerlidir.
                     </p>
                 </div>
             </div>
         </div>
 
-        <!-- Ana Liste -->
-        <div class="bg-white rounded-[32px] shadow-xl border border-slate-200 overflow-hidden mb-12">
-            <div class="overflow-x-auto">
-                <table class="w-full text-left border-collapse min-w-[1000px]">
+        <!-- ============ ANA TABLO ============ -->
+        <div class="bg-white rounded-3xl border border-slate-200/80 shadow-sm overflow-hidden" id="tableCard">
+            <div class="overflow-x-auto" id="tableScroll">
+                <table class="w-full text-left border-collapse min-w-[1080px]">
                     <thead>
                         <tr class="bg-slate-50 text-slate-500 text-[10px] uppercase font-bold tracking-wider">
-                            <th class="px-6 py-4">İlaç / Etken Madde</th>
-                            <th class="px-6 py-4">Klinik Senaryo</th>
-                            <th class="px-6 py-4">Uygulama Yolu</th>
-                            <th class="px-6 py-4">Net Süre / Protokol</th>
-                            <th class="px-6 py-4 text-center">Risk</th>
+                            <th class="px-5 py-3.5 w-[16%]">İlaç (Etken Madde)</th>
+                            <th class="px-5 py-3.5 w-[15%]">Endikasyon / Senaryo</th>
+                            <th class="px-5 py-3.5 w-[12%]">Uygulama Yolu</th>
+                            <th class="px-5 py-3.5 w-[26%]">Doz · Süre · Protokol</th>
+                            <th class="px-5 py-3.5 w-[23%]">Kritik Uyarı</th>
+                            <th class="px-5 py-3.5 w-[8%] text-center">Risk</th>
                         </tr>
                     </thead>
-                    <tbody id="drugListBody" class="text-sm divide-y divide-slate-100">
-                        <!-- JS Verisi -->
-                    </tbody>
+                    <tbody id="drugListBody" class="text-sm"></tbody>
+                    <tfoot>
+                        <tr>
+                            <td colspan="6" class="text-[6.5pt] text-slate-500 pt-1">
+                                Göğüs Cerrahisi Klinik İlaç Uygulama Rehberi v4.0 — Karar desteği amaçlıdır; nihai doz ve uygulama için güncel Kısa Ürün Bilgisi (KÜB) ve kurum protokolleri esastır. Böbrek/karaciğer yetmezliğinde doz ayarını kontrol ediniz.
+                            </td>
+                        </tr>
+                    </tfoot>
                 </table>
             </div>
         </div>
+
+        <!-- Ekran alt bilgisi -->
+        <footer id="screenFooter" class="mt-6 mb-10 text-center">
+            <p class="text-[11px] text-slate-400 leading-relaxed max-w-3xl mx-auto">
+                Bu rehber klinik karar desteği amaçlı hazırlanmıştır. Nihai doz, seyreltme ve uygulama süresi için güncel Kısa Ürün Bilgisi (KÜB) ile kurum protokolleri esas alınmalı; böbrek ve karaciğer yetmezliğinde doz ayarı ayrıca kontrol edilmelidir.
+            </p>
+        </footer>
     </main>
 
     <script>
-        const clinicalData = [
-            // MAYİLER & TPN & ELEKTROLİT
-            { name: "KCl (%7.5 Potasyum)", cat: "Mayi", ind: "Hipokalemi, aritmi profilaksisi", path: "İV İnfüzyon (SF içinde)", dose: "Maks hız: 10-20 mEq/saat. Periferik kolda 40 mEq/L'yi geçmemeli.", warn: "BOLUS YASAKTIR! Kardiyak arrest yapar.", level: "high" },
-            { name: "Nakout (%3 NaCl)", cat: "Mayi", ind: "Ağır hiponatremi, serebral ödem", path: "SADECE Santral Ven", dose: "Maks 10-20 ml/saat. Günlük sodyum artışı 10-12 mEq'ı geçmemeli.", warn: "Hızlı verilirse Miyelinolizis yapar.", level: "high" },
-            { name: "Ca Glukonat (%10 Kalsiyum)", cat: "Mayi", ind: "Hipokalsemi, transfüzyon sonrası", path: "İV Yavaş İnfüzyon", dose: "1 ampul (10ml) en az 10-20 dakikada (100ml SF içinde).", warn: "Bradikardi/Asistoli riski.", level: "high" },
-            { name: "Clexane (Enoksaparin)", cat: "Kardiyo", ind: "VTE Profilaksisi, İmmobilite", path: "Subkutan (SC)", dose: "Profilaksi: 1x40mg (0.4ml). Tedavi: 1mg/kg (12sa bir).", warn: "Epidural öncesi 12-24 sa ara verilmeli.", level: "safe" },
-            { name: "İnsülin (Kristalize)", cat: "Mayi", ind: "Hiperglisemi, GİK bileşeni", path: "İV İnfüzyon / SC", dose: "0.1 ünite/kg/saat (Saatlik KŞ takibiyle).", warn: "Hipoglisemi takibi zorunludur.", level: "high" },
-            { name: "Isolyte-S", cat: "Mayi", ind: "Post-op elektrolit idamesi", path: "İV İnfüzyon", dose: "Klinik duruma göre (80-120 ml/saat).", warn: "Kan ürünleriyle geçimlidir.", level: "safe" },
-            { name: "Isolyte-M", cat: "Mayi", ind: "Düşük volüm, pediatrik idame", path: "İV İnfüzyon", dose: "Standart idame hızı.", warn: "Dekstroz içerir, diyabette dikkat.", level: "safe" },
-            { name: "%5 Dekstroz", cat: "Mayi", ind: "İlaç seyreltme (Amiodaron vb)", path: "İV İnfüzyon", dose: "Seyreltme amacına göre.", warn: "Tek başına kafa içi basınçta dikkat.", level: "safe" },
-            { name: "Ringer Laktat", cat: "Mayi", ind: "Volüm replasmanı, yanık, travma", path: "İV İnfüzyon", dose: "Hızlı volüm açığı için 500-1000ml/saat.", warn: "KC yetmezliğinde laktat birikimi.", level: "safe" },
-            { name: "N4 / N9 (TPN)", cat: "Mayi", ind: "Beslenme desteği (Total Parenteral)", path: "N4 Periferik / N9 Santral", dose: "Maks hız: 2 ml/kg/saat (24 saate yayılarak).", warn: "İlaç geçimsizliği yüksektir.", level: "high" },
-            { name: "GİK Mayi", cat: "Mayi", ind: "Miyokard koruma", path: "İV İnfüzyon", dose: "500ml %5-10 Dex + 10Ü İnsülin + 10 mEq KCl.", warn: "KŞ ve K+ takibi şart.", level: "safe" },
-            { name: "Gİ Mayi", cat: "Mayi", ind: "Hiperkalemi tedavisi", path: "İV İnfüzyon", dose: "500ml %10 Dex + 10-20Ü İnsülin.", warn: "Hipoglisemi riski.", level: "safe" },
-
-            // ANTİBİYOTİKLER
-            { name: "Meronem (Meropenem)", cat: "Antibiyotik", ind: "VAP, Sepsis, Ampiyem", path: "İV İnfüzyon", dose: "1 gram, 30 dakikada veya 3 saatlik uzatılmış infüzyon.", warn: "Valproik asit düzeyini düşürür.", level: "safe" },
-            { name: "Desefin (Seftriakson)", cat: "Antibiyotik", ind: "Pnömoni, Profilaksi", path: "İV İnfüzyon / İM", dose: "1-2 gram, 100ml SF içinde 30 dakikada.", warn: "Kalsiyum içeren sıvılarla geçimsizdir.", level: "safe" },
-            { name: "Moksilox (Avelox)", cat: "Antibiyotik", ind: "Solunum yolu enfeksiyonu", path: "İV İnfüzyon", dose: "400 mg (250ml hazır), net 60 dakikada.", warn: "QT uzaması yapabilir.", level: "safe" },
-            { name: "Colistin (Colimycin)", cat: "Antibiyotik", ind: "Dirençli Gram (-) enfeksiyon", path: "İV İnfüzyon", dose: "Yükleme: 9 MIU, 60 dakikada. İdame: 2x4.5 MIU.", warn: "Nefrotoksiktir.", level: "high" },
-            { name: "Tigesiklin (Tygacil)", cat: "Antibiyotik", ind: "Kompleks İA enfeksiyonlar", path: "İV İnfüzyon", dose: "Yükleme: 100mg (1 sa). İdame: 2x50mg.", warn: "Ciddi bulantı yapabilir.", level: "safe" },
-            { name: "Fosfomisin (Fosit)", cat: "Antibiyotik", ind: "Dirençli İYE, ampiyem", path: "İV İnfüzyon", dose: "4-8 gram, 200ml SF içinde net 60 dakikada.", warn: "Yüksek sodyum yükü.", level: "safe" },
-            { name: "Polix (Polimiksin B)", cat: "Antibiyotik", ind: "Çok dirençli sepsis", path: "İV İnfüzyon", dose: "1.25 - 1.5 mg/kg, 12 saatte bir, 1 saatlik infüzyon.", warn: "Nörotoksisite riski.", level: "high" },
-            { name: "Cefaks (Sefuroksim)", cat: "Antibiyotik", ind: "Üst solunum yolu enf.", path: "İV Puşe", dose: "750mg-1.5g, 3-5 dakikada yavaşça.", warn: "Penisilin alerjisine dikkat.", level: "safe" },
-            { name: "Cezol (Sefazolin)", cat: "Antibiyotik", ind: "Cerrahi profilaksi", path: "İV Puşe", dose: "1-2 gram, 3-5 dakikada yavaşça.", warn: "Kesi öncesi 30 dk önce verilmelidir.", level: "safe" },
-            { name: "Biteral (Ornidazol)", cat: "Antibiyotik", ind: "Anaerobik enfeksiyonlar", path: "İV İnfüzyon", dose: "500mg, net 15-30 dakikada.", warn: "Direkt bolus verilmez.", level: "safe" },
-
-            // ANALJEZİ & SEDASYON
-            { name: "Parol (Parasetamol)", cat: "Analjezik", ind: "Ateş, Hafif/Orta ağrı", path: "İV İnfüzyon", dose: "1 gram (100ml), net 15 dakikada.", warn: "KC yetmezliğinde doz kısıtlanır.", level: "safe" },
-            { name: "Arveles (Deksketoprofen)", cat: "Analjezik", ind: "Post-op akut ağrı", path: "İV İnfüzyon", dose: "50mg, 100ml SF içinde 15-30 dakikada.", warn: "GİS kanama öyküsünde riskli.", level: "safe" },
-            { name: "Brufen (İbuprofen)", cat: "Analjezik", ind: "Post-op ağrı ve inflamasyon", path: "İV İnfüzyon", dose: "400-800 mg, 100ml SF içinde 30 dakikada.", warn: "Renal fonksiyon takibi.", level: "safe" },
-            { name: "Aldolan (Petidin)", cat: "Analjezik", ind: "Titreme kontrolü, Şiddetli ağrı", path: "İV Yavaş Puşe", dose: "25-50 mg, 2-3 dakikada yavaşça.", warn: "Nöbet eşiğini düşürür.", level: "high" },
-            { name: "Contramal (Tramadol)", cat: "Analjezik", ind: "Orta/Şiddetli ağrı", path: "İV İnfüzyon", dose: "100mg, 100ml SF içinde 15-30 dakikada.", warn: "Hızlı verilirse şiddetli bulantı yapar.", level: "safe" },
-            { name: "Pofol (Propofol)", cat: "Analjezik", ind: "Sedasyon, Entübasyon", path: "İV İnfüzyon / Puşe", dose: "0.5 - 4 mg/kg/saat (Titrasyonla).", warn: "Hipotansiyon/Apne yapabilir.", level: "high" },
-            { name: "Fentanil", cat: "Analjezik", ind: "Şiddetli ağrı, Sedasyon", path: "İV İnfüzyon / Puşe", dose: "1-2 mcg/kg/saat infüzyon.", warn: "Göğüs duvarı sertliği yapabilir.", level: "high" },
-            { name: "Sedadomid (Deksmedetomidin)", cat: "Analjezik", ind: "Uyanılabilir sedasyon, weaning", path: "İV İnfüzyon", dose: "0.2 - 1.4 mcg/kg/saat.", warn: "Bradikardi ve hipotansiyon.", level: "high" },
-            { name: "Norodol (Haloperidol)", cat: "Analjezik", ind: "Ajitasyon, Delirium", path: "İV / İM", dose: "2.5 - 5 mg (Yavaş puşe).", warn: "QT uzaması / Torsades de Pointes.", level: "high" },
-            { name: "Dormicum (Midazolam)", cat: "Analjezik", ind: "Sedasyon, Anksiyoliz", path: "İV İnfüzyon / Puşe", dose: "Puşe: 1-2mg. İnfüzyon: 0.03 mg/kg/saat.", warn: "Yaşlılarda delirium riski.", level: "high" },
-            { name: "Dizem (Diazepam)", cat: "Analjezik", ind: "Status, Spazm", path: "İV Yavaş Puşe", dose: "5 mg/dakika hızını geçmemeli.", warn: "Vasküler irritasyon yapar.", level: "high" },
-            { name: "Keppra (Levetirasetam)", cat: "Analjezik", ind: "Nöbet profilaksisi", path: "İV İnfüzyon", dose: "500-1500 mg, 100ml SF içinde 15 dakikada.", warn: "Hızlı verilmesi önerilmez.", level: "safe" },
-            { name: "Xanax (Alprazolam)", cat: "Analjezik", ind: "Akut anksiyete", path: "Oral", dose: "0.25 - 0.5 mg.", warn: "Solunum depresyonunda dikkat.", level: "safe" },
-
-            // KARDİYOVASKÜLER
-            { name: "Amiodaron (Cordarone)", cat: "Kardiyo", ind: "Post-op AF (POAF), SVT", path: "SADECE %5 Dekstroz içinde", dose: "Yükleme: 300mg/30dk. İdame: 900mg/24 saat.", warn: "SF içinde kristalize olur. Cam şişe şart.", level: "high" },
-            { name: "Diltizem", cat: "Kardiyo", ind: "AF hız kontrolü", path: "İV İnfüzyon / Puşe", dose: "İnfüzyon: 5-15 mg/saat.", warn: "WPW sendromunda kontrendike.", level: "high" },
-            { name: "Belok (Metoprolol)", cat: "Kardiyo", ind: "Taşikardi, HT", path: "İV Yavaş Puşe", dose: "5 mg, net 2 dakikada.", warn: "Astım ve AV blokta kontrendike.", level: "high" },
-            { name: "Ninax (Nikardipin)", cat: "Kardiyo", ind: "Aort diseksiyonu, Perioperatif HT", path: "İV İnfüzyon (Perfüzör)", dose: "3-5 mg/saat ile başlanır, kademeli artırılır.", warn: "Işığa duyarlıdır.", level: "high" },
-            { name: "Perlinganit (Nitrogliserin)", cat: "Kardiyo", ind: "Pulmoner ödem, Angina", path: "İV İnfüzyon", dose: "5 mcg/dk başlanır, titrasyonla.", warn: "Şiddetli baş ağrısı yapabilir.", level: "high" },
-            { name: "Delix (Ramipril)", cat: "Kardiyo", ind: "Hipertansiyon idamesi", path: "Oral", dose: "2.5 - 5 mg (Günde 1).", warn: "Kuru öksürük ve anjiyoödem.", level: "safe" },
-            { name: "Cardura (Doksazosin)", cat: "Kardiyo", ind: "HT, Prostat hiperplazisi", path: "Oral", dose: "1 - 4 mg.", warn: "İlk doz senkopuna dikkat.", level: "safe" },
-
-            // SOLUNUM & DİĞER
-            { name: "Prednol (Metilprednizolon)", cat: "Solunum", ind: "Bronkospazm, Ödem", path: "İV Puşe", dose: "20-250 mg, en az 1-2 dakikada yavaşça.", warn: "Hızlı verilirse aritmi yapabilir.", level: "safe" },
-            { name: "Desal (Furosemid)", cat: "Solunum", ind: "Pulmoner ödem, Hipervolemi", path: "İV Yavaş Puşe", dose: "Dakikada 4 mg hızını (20mg/5dk) aşmamalı.", warn: "Ototoksisite (kalıcı sağırlık) riski.", level: "high" },
-            { name: "Flixair (Flutikazon)", cat: "Solunum", ind: "İltihabi hava yolu hastalığı", path: "İnhaler", dose: "Günde 2 kez.", warn: "Ağız bakımı şart (mantar riski).", level: "safe" },
-            { name: "Iprasal (İpra+Salbu)", cat: "Solunum", ind: "Bronkospazm, KOAH", path: "Nebulizasyon", dose: "2.5ml hazır, 10-15 dakikada.", warn: "Taşikardi ve tremor.", level: "safe" },
-            { name: "Pulmicort (Budesonid)", cat: "Solunum", ind: "İltihap, Ödem", path: "Nebulizasyon", dose: "0.25-0.5 mg, 15 dakikada.", warn: "Uygulama sonrası ağız çalkalanmalı.", level: "safe" },
-            { name: "Kemoset (Ondansetron)", cat: "Solunum", ind: "Post-op bulantı kusma", path: "İV Puşe", dose: "4-8 mg, 2-5 dakikada yavaşça.", warn: "QT uzaması yapabilir.", level: "safe" },
-            { name: "Panto (Pantoprazol)", cat: "Solunum", ind: "Stres ülseri profilaksisi", path: "İV Puşe", dose: "40 mg, 2-15 dakikada.", warn: "Seyreltilince 12 saat içinde kullanılmalı.", level: "safe" }
+        /* ============ KATEGORİLER ============ */
+        const CATEGORIES = [
+            { key: 'Mayi',        label: 'MAYİ · ELEKTROLİT · TPN',  color: '#0284c7' },
+            { key: 'Antibiyotik', label: 'ANTİBİYOTİKLER',           color: '#059669' },
+            { key: 'Analjezik',   label: 'ANALJEZİ · SEDASYON',      color: '#7c3aed' },
+            { key: 'Kardiyo',     label: 'KARDİYOVASKÜLER',          color: '#e11d48' },
+            { key: 'Solunum',     label: 'SOLUNUM · GİS · DİĞER',    color: '#d97706' }
         ];
 
+        /* ============ KLİNİK VERİ ============ */
+        const clinicalData = [
+            /* ---- MAYİ · ELEKTROLİT · TPN ---- */
+            { name: "KCl %7.5 (Potasyum Klorür)", cat: "Mayi", ind: "Hipokalemi replasmanı, aritmi profilaksisi", path: "İV İnfüzyon (dilüe, pompa)", dose: "Periferik: maks 10 mEq/sa ve 40 mEq/L. Santral + monitörize: maks 20 mEq/sa. (1 amp %7.5/10 ml = 10 mEq)", warn: "ASLA İV bolus/puşe yapılmaz — kardiyak arrest riski. Mutlaka infüzyon pompası ile; flebit izlemi.", level: "high" },
+            { name: "Nakout (%3 Hipertonik NaCl)", cat: "Mayi", ind: "Semptomatik ağır hiponatremi, serebral ödem", path: "Santral ven tercih", dose: "Semptomatikte: 100-150 ml, 10-20 dk'da (gerekirse tekrar). Na⁺ düzeltmesi 24 saatte ≤ 8-10 mEq/L.", warn: "Hızlı düzeltme → ozmotik demiyelinizasyon sendromu. 2-4 saatte bir Na⁺ kontrolü.", level: "high" },
+            { name: "Kalsiyum Glukonat %10", cat: "Mayi", ind: "Semptomatik hipokalsemi, hiperkalemide kardiyoproteksiyon, masif transfüzyon", path: "İV Yavaş İnfüzyon", dose: "1 amp (10 ml) 50-100 ml SF/D5W içinde 10-20 dk'da. Hiperkalemide EKG eşliğinde 2-5 dk'da verilebilir.", warn: "Hızlı uygulama: bradikardi/asistoli. Seftriakson ve bikarbonatla aynı hattan verilmez; ekstravazasyonda doku hasarı.", level: "high" },
+            { name: "Kristalize İnsülin (Regüler)", cat: "Mayi", ind: "Hiperglisemi (İV protokol), hiperkalemi, GİK bileşeni", path: "İV İnfüzyon (pompa) / SC", dose: "İnfüzyon: 0.05-0.1 Ü/kg/sa; saatlik kan şekeri ile titrasyon.", warn: "Hipoglisemi ve hipokalemi izlemi zorunlu. Yüksek riskli ilaç: hazırlıkta çift kontrol.", level: "high" },
+            { name: "Isolyte-S", cat: "Mayi", ind: "Dengeli kristaloid; post-op idame ve replasman", path: "İV İnfüzyon", dose: "İdame: ~25-30 ml/kg/gün (klinik duruma göre 80-120 ml/sa).", warn: "Fizyolojik pH; kan ürünleriyle geçimli kabul edilir.", level: "safe" },
+            { name: "Isolyte-M", cat: "Mayi", ind: "K⁺ içeren idame solüsyonu", path: "İV İnfüzyon", dose: "Yalnızca idame amaçlı; yavaş infüzyon, bolus verilmez.", warn: "≈35 mEq/L K⁺ içerir: anüri, böbrek yetmezliği ve hiperkalemide kullanılmaz. Dekstroz içerir; KŞ takibi.", level: "safe" },
+            { name: "%5 Dekstroz", cat: "Mayi", ind: "İlaç sulandırma (amiodaron vb.), serbest su açığı", path: "İV İnfüzyon", dose: "Taşıyıcı/sulandırıcı olarak ilgili ilaç protokolüne göre.", warn: "Efektif hipotonik: serebral ödem/KİBAS'ta kaçının. Tek başına volüm resüsitasyonunda yeri yok.", level: "safe" },
+            { name: "Ringer Laktat", cat: "Mayi", ind: "Volüm replasmanı (travma, yanık, cerrahi kayıp)", path: "İV İnfüzyon", dose: "Resüsitasyonda 500-1000 ml hızlı infüzyon; sonrası klinik yanıta göre.", warn: "Ca⁺⁺ içerir: kan ürünleri ve seftriaksonla aynı hattan verilmez. İleri KC yetmezliğinde laktat birikimi.", level: "safe" },
+            { name: "TPN — N4 / N9", cat: "Mayi", ind: "Enteral beslenemeyen hastada parenteral nütrisyon", path: "N4: Periferik · N9: Santral", dose: "Maks 2 ml/kg/sa; 24 saate yayılır. Dedike lümen kullanılır.", warn: "Y-hattından ilaç verilmez (geçimsizlik yüksek). Refeeding riski: P, K, Mg ve KŞ takibi; günlük set değişimi.", level: "high" },
+            { name: "GİK Solüsyonu", cat: "Mayi", ind: "Miyokard koruma protokolü", path: "İV İnfüzyon", dose: "500 ml %5-10 Dekstroz + 10 Ü kristalize insülin + 10 mEq KCl (kurum protokolüne göre).", warn: "Saatlik KŞ ve K⁺ takibi şarttır.", level: "safe" },
+            { name: "Gİ Solüsyonu (Hiperkalemi)", cat: "Mayi", ind: "Hiperkalemide K⁺'un hücre içine kaydırılması", path: "İV İnfüzyon", dose: "10 Ü kristalize insülin + 50 g dekstroz (500 ml %10 Dex), 15-30 dk'da.", warn: "Geç hipoglisemi sık: 1. ve 2. saatte KŞ kontrolü. Etki geçicidir; K⁺ uzaklaştırıcı tedaviyi planla.", level: "safe" },
+
+            /* ---- ANTİBİYOTİKLER ---- */
+            { name: "Meronem (Meropenem)", cat: "Antibiyotik", ind: "HAP/VİP, sepsis, febril nötropeni, ampiyem", path: "İV İnfüzyon", dose: "3×1-2 g; 30 dk'da veya 3 saatlik uzatılmış infüzyon. Böbreğe göre doz ayarı.", warn: "Valproat düzeyini belirgin düşürür (nöbet riski). Karbapenem çapraz alerjisi sorgulanır.", level: "safe" },
+            { name: "Desefin (Seftriakson)", cat: "Antibiyotik", ind: "Toplum kökenli pnömoni, cerrahi enfeksiyonlar", path: "İV İnfüzyon / İM", dose: "1×1-2 g; 100 ml SF içinde 30 dk'da.", warn: "Kalsiyum içeren solüsyonlarla (Ringer laktat dahil) aynı hattan verilmez. Biliyer psödolitiyazis yapabilir.", level: "safe" },
+            { name: "Moksilox (Moksifloksasin)", cat: "Antibiyotik", ind: "Solunum yolu enfeksiyonları (atipik dahil)", path: "İV İnfüzyon", dose: "1×400 mg (250 ml hazır solüsyon), net 60 dk'da.", warn: "QT uzaması: diğer QT uzatan ajanlarla dikkat. Böbrek doz ayarı gerektirmez.", level: "safe" },
+            { name: "Colistin (Kolistimetat Na)", cat: "Antibiyotik", ind: "ÇİD Gram(−) enfeksiyonlar (Acinetobacter, Pseudomonas)", path: "İV İnfüzyon", dose: "Yükleme: 9 MÜ, 60 dk'da. 12-24 sa sonra idame: 2×4.5 MÜ (CrCl'ye göre ayarlanır).", warn: "Nefrotoksik: günlük kreatinin takibi. Nöromüsküler blokaj potansiyeli.", level: "high" },
+            { name: "Tigesiklin (Tygacil)", cat: "Antibiyotik", ind: "Komplike intraabdominal ve yumuşak doku enfeksiyonları", path: "İV İnfüzyon", dose: "Yükleme: 100 mg (30-60 dk). İdame: 2×50 mg.", warn: "Belirgin bulantı-kusma. Bakteriyemide tek başına tercih edilmez.", level: "safe" },
+            { name: "Fosfomisin (Fosit)", cat: "Antibiyotik", ind: "ÇİD enfeksiyonlarda kombinasyon (ampiyem dahil)", path: "İV İnfüzyon", dose: "12-16 g/gün bölünmüş (örn. 3-4×4 g); her doz 200 ml SF içinde 60 dk'da.", warn: "Yüksek sodyum yükü (~0.33 g Na/g): kalp yetmezliği ve HT'de dikkat. Hipokalemi yapabilir.", level: "safe" },
+            { name: "Polix (Polimiksin B)", cat: "Antibiyotik", ind: "Çok ilaca dirençli sepsis", path: "İV İnfüzyon", dose: "Yükleme: 2-2.5 mg/kg; idame: 2×1.25-1.5 mg/kg, 1 saatlik infüzyon.", warn: "Nefro- ve nörotoksisite (parestezi sık); günlük böbrek fonksiyon takibi.", level: "high" },
+            { name: "Cefaks (Sefuroksim)", cat: "Antibiyotik", ind: "Solunum yolu enfeksiyonları, profilaksi alternatifi", path: "İV Puşe / Kısa İnfüzyon", dose: "3×750 mg - 1.5 g; puşe 3-5 dk'da veya 30 dk infüzyon.", warn: "Penisilin anafilaksisi öyküsünde çapraz reaksiyon riski.", level: "safe" },
+            { name: "Cezol (Sefazolin)", cat: "Antibiyotik", ind: "Cerrahi antimikrobiyal profilaksi", path: "İV Puşe", dose: "2 g İV (≥120 kg: 3 g); insizyondan önceki 60 dk içinde. ≥4 saatlik vakada intraop tekrar dozu.", warn: "3-5 dk'da yavaş puşe. Penisilin anafilaksisi öyküsünde alternatif ajana geçilir.", level: "safe" },
+            { name: "Biteral (Ornidazol)", cat: "Antibiyotik", ind: "Anaerop kapsama (aspirasyon, intraabdominal enfeksiyon)", path: "İV İnfüzyon", dose: "2×500 mg - 1 g; 15-30 dk infüzyon.", warn: "Direkt İV bolus yapılmaz. Nörolojik yan etkiler (baş dönmesi, periferik nöropati) izlenir.", level: "safe" },
+
+            /* ---- ANALJEZİ · SEDASYON ---- */
+            { name: "Parol (Parasetamol)", cat: "Analjezik", ind: "Ateş, hafif-orta ağrı; multimodal analjezi temeli", path: "İV İnfüzyon", dose: "4×1 g (maks 4 g/gün; <50 kg: 15 mg/kg); 100 ml, net 15 dk'da.", warn: "KC yetmezliği, alkolizm ve malnütrisyonda günlük doz 2-3 g'a düşürülür.", level: "safe" },
+            { name: "Arveles (Deksketoprofen)", cat: "Analjezik", ind: "Post-op akut ağrı", path: "İV İnfüzyon", dose: "2-3×50 mg (maks 150 mg/gün); 100 ml SF içinde 10-30 dk'da. İV kullanım ≤2 gün.", warn: "GİS kanama öyküsü, böbrek yetmezliği ve ileri yaşta riskli.", level: "safe" },
+            { name: "Brufen (İbuprofen)", cat: "Analjezik", ind: "Post-op ağrı ve inflamasyon", path: "İV İnfüzyon", dose: "3×400-800 mg (maks 2400 mg/gün); 100 ml SF içinde ≥30 dk'da.", warn: "Renal fonksiyon takibi; hipovolemide nefrotoksisite artar. GİS koruması değerlendirilir.", level: "safe" },
+            { name: "Aldolan (Petidin)", cat: "Analjezik", ind: "Post-op titreme (shivering), kısa süreli şiddetli ağrı", path: "İV Yavaş Puşe", dose: "Titreme: 25 mg. Analjezi: 25-50 mg; 2-3 dk'da yavaşça.", warn: "Normeperidin birikimi → nöbet. Böbrek yetmezliğinde kaçının; MAOİ ile kontrendike.", level: "high" },
+            { name: "Contramal (Tramadol)", cat: "Analjezik", ind: "Orta-şiddetli ağrı", path: "İV İnfüzyon", dose: "50-100 mg; 100 ml SF içinde 15-30 dk'da (maks 400 mg/gün).", warn: "Hızlı puşe: şiddetli bulantı-kusma. Nöbet eşiğini düşürür; SSRI/SNRI ile serotonin sendromu riski.", level: "safe" },
+            { name: "Pofol (Propofol)", cat: "Analjezik", ind: "İndüksiyon, mekanik ventilasyonda sedasyon", path: "İV İnfüzyon / Puşe", dose: "Sedasyon: 0.3-4 mg/kg/sa, titrasyonla.", warn: "Hipotansiyon-apne. >48 sa ve >4 mg/kg/sa: PRIS riski. Lipid bazlı: sıkı asepsi, set 12 saatte değişir.", level: "high" },
+            { name: "Fentanil", cat: "Analjezik", ind: "Şiddetli ağrı, sedo-analjezi", path: "İV İnfüzyon / Puşe", dose: "Bolus: 25-100 mcg yavaş puşe. İnfüzyon: 0.7-2 mcg/kg/sa.", warn: "Hızlı puşede göğüs duvarı rijiditesi. Solunum depresyonu: naloksan hazır bulundurulur.", level: "high" },
+            { name: "Sedadomid (Deksmedetomidin)", cat: "Analjezik", ind: "Kooperatif sedasyon, weaning, deliryumda alternatif", path: "İV İnfüzyon (pompa)", dose: "0.2-1.4 mcg/kg/sa; YBÜ'de yükleme dozu genellikle önerilmez.", warn: "Bradikardi ve hipotansiyon; bolus verilmez. Solunum depresyonu yapmaz.", level: "high" },
+            { name: "Norodol (Haloperidol)", cat: "Analjezik", ind: "Hiperaktif deliryum, akut ajitasyon", path: "İV / İM", dose: "2.5-5 mg yavaş puşe; 15-30 dk'da tekrarlanabilir (düşük dozla başla).", warn: "QT uzaması / Torsades: İV kullanımda EKG monitörizasyonu; K⁺ ve Mg⁺⁺ düzeltilir. EPS riski.", level: "high" },
+            { name: "Dormicum (Midazolam)", cat: "Analjezik", ind: "Sedasyon, anksiyoliz", path: "İV İnfüzyon / Puşe", dose: "Titre puşe: 0.5-2 mg. İnfüzyon: 0.02-0.1 mg/kg/sa.", warn: "Yaşlıda deliryum ve birikim riski. Solunum depresyonu: flumazenil hazır bulundurulur.", level: "high" },
+            { name: "Dizem (Diazepam)", cat: "Analjezik", ind: "Status epileptikus, kas spazmı, alkol yoksunluğu", path: "İV Yavaş Puşe", dose: "5-10 mg; 5 mg/dk hızını geçmemeli.", warn: "Sulandırılmaz (çökelir); küçük venlerde flebit. Uzun yarı ömür: birikim ve sedasyon uzaması.", level: "high" },
+            { name: "Keppra (Levetirasetam)", cat: "Analjezik", ind: "Nöbet tedavisi ve profilaksisi", path: "İV İnfüzyon", dose: "2×500-1500 mg; 100 ml SF içinde 15 dk'da.", warn: "Bolus verilmez. Böbreğe göre doz ayarı; ajitasyon/davranış değişikliği yapabilir.", level: "safe" },
+            { name: "Xanax (Alprazolam)", cat: "Analjezik", ind: "Akut anksiyete", path: "Oral", dose: "0.25-0.5 mg, günde 2-3 kez (gerektikçe).", warn: "Yaşlıda sedasyon ve düşme; solunum yetmezliğinde dikkat. Ani kesilirse yoksunluk.", level: "safe" },
+
+            /* ---- KARDİYOVASKÜLER ---- */
+            { name: "Clexane (Enoksaparin)", cat: "Kardiyo", ind: "VTE profilaksisi ve tedavisi", path: "Subkutan (SC)", dose: "Profilaksi: 1×40 mg. Tedavi: 2×1 mg/kg. CrCl <30 ml/dk'da doz azaltılır.", warn: "Nöroaksiyel girişim/kateter: profilaktik dozdan ≥12 sa, tedavi dozundan ≥24 sa önce kesilir. Antidot: protamin (kısmi).", level: "high" },
+            { name: "Amiodaron (Cordarone)", cat: "Kardiyo", ind: "Post-op AF (POAF), stabil VT/SVT", path: "SADECE %5 Dekstroz · santral tercih", dose: "Yükleme: 300 mg / 30-60 dk. İdame: 900 mg / 24 sa (1 mg/dk × 6 sa → 0.5 mg/dk × 18 sa).", warn: "SF ile geçimsiz (çökelir). PVC sete adsorbe olur: cam şişe/uygun set. Periferikte flebit; hipotansiyon-bradikardi.", level: "high" },
+            { name: "Diltizem (Diltiazem)", cat: "Kardiyo", ind: "AF/atriyal taşikardilerde hız kontrolü", path: "İV Puşe + İnfüzyon", dose: "Bolus: 0.25 mg/kg / 2 dk (yanıtsızsa 0.35 mg/kg). İnfüzyon: 5-15 mg/sa.", warn: "Pre-eksite AF (WPW) ve ileri sistolik kalp yetmezliğinde kontrendike. Beta-blokerle birlikte AV blok riski.", level: "high" },
+            { name: "Belok (Metoprolol)", cat: "Kardiyo", ind: "Taşikardi, hipertansiyon", path: "İV Yavaş Puşe", dose: "5 mg, ≥2 dk'da; 5 dk arayla maks 3 doz (toplam 15 mg).", warn: "Astım, dekompanse kalp yetmezliği ve 2-3° AV blokta kontrendike. Bradikardi-hipotansiyon izlemi.", level: "high" },
+            { name: "Ninax (Nikardipin)", cat: "Kardiyo", ind: "Perioperatif HT, hipertansif aciller, aort patolojileri", path: "İV İnfüzyon (perfüzör)", dose: "5 mg/sa ile başla; 5-15 dk'da 2.5 mg/sa artır (maks 15 mg/sa).", warn: "Refleks taşikardi. Periferik infüzyonda giriş yeri 12 saatte bir değiştirilir; ışıktan korunur.", level: "high" },
+            { name: "Perlinganit (Nitrogliserin)", cat: "Kardiyo", ind: "Akut pulmoner ödem, hipertansif acil, iskemi", path: "İV İnfüzyon (perfüzör)", dose: "5-10 mcg/dk ile başla; hedefe göre titre (genellikle ≤200 mcg/dk).", warn: "PDE-5 inhibitörü (sildenafil vb.) kullanımıyla kontrendike. Baş ağrısı, hipotansiyon ve tolerans gelişimi.", level: "high" },
+            { name: "Delix (Ramipril)", cat: "Kardiyo", ind: "Hipertansiyon idamesi", path: "Oral", dose: "1×2.5-10 mg.", warn: "Kuru öksürük, anjiyoödem. K⁺ ve kreatinin takibi; hipovolemide ilk doz hipotansiyonu.", level: "safe" },
+            { name: "Cardura (Doksazosin)", cat: "Kardiyo", ind: "HT, prostat hiperplazisi", path: "Oral", dose: "1 mg ile başlanır; titre edilir (maks 8 mg).", warn: "İlk doz hipotansiyonu/senkop: gece yatmadan başlanır. Ortostatik hipotansiyon.", level: "safe" },
+
+            /* ---- SOLUNUM · GİS · DİĞER ---- */
+            { name: "Prednol (Metilprednizolon)", cat: "Solunum", ind: "Bronkospazm, hava yolu ödemi", path: "İV Puşe / İnfüzyon", dose: "40-125 mg: 2-5 dk'da yavaş puşe. Pulse (≥250 mg): 30-60 dk infüzyonla.", warn: "Yüksek dozun hızlı verilmesiyle aritmi bildirilmiştir. Hiperglisemi; uzamış kullanımda GİS koruması.", level: "safe" },
+            { name: "Desal (Furosemid)", cat: "Solunum", ind: "Pulmoner ödem, hipervolemi", path: "İV Yavaş Puşe / İnfüzyon", dose: "20-40 mg puşe (maks 4 mg/dk); yüksek dozlar pompayla infüzyon.", warn: "Hızlı uygulamada ototoksisite (böbrek yetmezliği + aminoglikozidle artar). Hipokalemi-hipomagnezemi takibi.", level: "high" },
+            { name: "Flixair (Flutikazon)", cat: "Solunum", ind: "İnflamatuvar hava yolu hastalığı idamesi", path: "İnhaler", dose: "Günde 2 kez.", warn: "Oral kandidiyazis: her kullanım sonrası ağız çalkalanır.", level: "safe" },
+            { name: "Iprasal (İpratropium + Salbutamol)", cat: "Solunum", ind: "Bronkospazm, KOAH alevlenmesi", path: "Nebulizasyon", dose: "3-4×1 nebül (2.5 ml), 10-15 dk'da.", warn: "Taşikardi ve tremor. Nebül buharının gözle teması dar açılı glokom atağını tetikleyebilir.", level: "safe" },
+            { name: "Pulmicort (Budesonid)", cat: "Solunum", ind: "Hava yolu inflamasyonu ve ödemi", path: "Nebulizasyon", dose: "2×0.25-0.5 mg, 15 dk'da.", warn: "Kullanım sonrası ağız çalkalanır; maske temas bölgesinde cilt irritasyonu.", level: "safe" },
+            { name: "Kemoset (Ondansetron)", cat: "Solunum", ind: "Post-op bulantı-kusma", path: "İV Puşe", dose: "4-8 mg, 2-5 dk'da yavaşça (tek İV doz maks 16 mg).", warn: "QT uzaması: diğer QT uzatan ajanlarla dikkat. Konstipasyon, baş ağrısı.", level: "safe" },
+            { name: "Panto (Pantoprazol)", cat: "Solunum", ind: "Stres ülseri profilaksisi, GİS kanama", path: "İV Puşe / İnfüzyon", dose: "1×40 mg; ≥2 dk puşe veya 15 dk infüzyon. Üst GİS kanamada: 80 mg bolus + 8 mg/sa infüzyon.", warn: "Sulandırıldıktan sonra kısa sürede kullanılır. Uzamış kullanımda hipomagnezemi.", level: "safe" }
+        ];
+
+        /* ============ DURUM ============ */
         let activeCat = 'all';
         const searchInput = document.getElementById('mainSearch');
         const listBody = document.getElementById('drugListBody');
+        const catByKey = Object.fromEntries(CATEGORIES.map(c => [c.key, c]));
 
-        function render(filter = '', category = 'all') {
-            listBody.innerHTML = '';
-            const filtered = clinicalData.filter(d => {
-                const s = filter.toLowerCase();
-                const matchesSearch = d.name.toLowerCase().includes(s) || d.ind.toLowerCase().includes(s);
-                const matchesCat = category === 'all' || d.cat === category;
-                return matchesSearch && matchesCat;
-            });
-
-            filtered.forEach(d => {
-                const row = document.createElement('tr');
-                row.className = 'drug-row border-b border-slate-50 transition';
-                row.innerHTML = `
-                    <td class="px-6 py-4">
-                        <div class="flex items-center gap-2">
-                            <div class="w-1.5 h-1.5 rounded-full ${d.level === 'high' ? 'bg-red-500' : 'bg-emerald-500'}"></div>
-                            <span class="font-bold text-slate-800">${d.name}</span>
-                        </div>
-                    </td>
-                    <td class="px-6 py-4 text-xs text-slate-500 italic">${d.ind}</td>
-                    <td class="px-6 py-4"><span class="mono text-[10px] font-bold text-blue-600">${d.path}</span></td>
-                    <td class="px-6 py-4 font-semibold text-xs text-slate-700">${d.dose}</td>
-                    <td class="px-6 py-4 text-center">
-                        <span class="risk-badge px-2 py-0.5 rounded-full text-[9px] font-bold ${d.level === 'high' ? 'bg-red-50 text-red-600' : 'bg-emerald-50 text-emerald-600'}">
-                            ${d.level === 'high' ? 'YÜKSEK RİSK' : 'STANDART'}
-                        </span>
-                    </td>
-                `;
-                listBody.appendChild(row);
-            });
-            document.getElementById('totalCount').innerText = clinicalData.length;
-            document.getElementById('highRiskCount').innerText = clinicalData.filter(x => x.level === 'high').length;
+        /* ============ FİLTRE BUTONLARI ============ */
+        function buildFilters() {
+            const box = document.getElementById('filterBox');
+            const counts = countByCat(clinicalData);
+            const mk = (key, label, dotColor) => {
+                const btn = document.createElement('button');
+                btn.className = 'cat-btn px-3.5 py-2 rounded-xl text-[10px] font-bold bg-white/10 hover:bg-white/20 flex items-center gap-2';
+                btn.dataset.cat = key;
+                btn.innerHTML = (dotColor ? `<span class="cat-dot" style="background:${dotColor}"></span>` : '') +
+                    `<span>${label}</span>` +
+                    `<span class="opacity-50 font-semibold">${key === 'all' ? clinicalData.length : (counts[key] || 0)}</span>`;
+                btn.onclick = () => {
+                    document.querySelectorAll('.cat-btn').forEach(b => b.classList.remove('active'));
+                    btn.classList.add('active');
+                    activeCat = key;
+                    render(searchInput.value, activeCat);
+                };
+                return btn;
+            };
+            box.appendChild(mk('all', 'TÜMÜ', null));
+            CATEGORIES.forEach(c => box.appendChild(mk(c.key, c.label, c.color)));
+            box.firstChild.classList.add('active');
         }
 
-        function initChart() {
-            const ctx = document.getElementById('categoryChart').getContext('2d');
-            const counts = clinicalData.reduce((acc, curr) => {
-                acc[curr.cat] = (acc[curr.cat] || 0) + 1;
-                return acc;
-            }, {});
+        function countByCat(arr) {
+            return arr.reduce((acc, d) => { acc[d.cat] = (acc[d.cat] || 0) + 1; return acc; }, {});
+        }
 
+        /* ============ LİSTE ============ */
+        function render(filter = '', category = 'all') {
+            listBody.innerHTML = '';
+            const s = filter.trim().toLowerCase();
+
+            const filtered = clinicalData.filter(d => {
+                const hay = (d.name + ' ' + d.ind + ' ' + d.dose + ' ' + d.warn).toLowerCase();
+                return (s === '' || hay.includes(s)) && (category === 'all' || d.cat === category);
+            });
+
+            let listedHigh = 0;
+
+            CATEGORIES.forEach(c => {
+                const items = filtered.filter(d => d.cat === c.key);
+                if (!items.length) return;
+
+                const head = document.createElement('tr');
+                head.className = 'cat-header';
+                head.innerHTML = `
+                    <td colspan="6" class="px-5 py-2">
+                        <div class="flex items-center gap-2.5">
+                            <span class="cat-dot" style="background:${c.color}"></span>
+                            <span class="font-bold text-[11px] tracking-[0.15em] text-slate-700">${c.label}</span>
+                            <span class="text-[10px] text-slate-400 font-semibold">· ${items.length} kalem</span>
+                        </div>
+                    </td>`;
+                listBody.appendChild(head);
+
+                items.forEach(d => {
+                    if (d.level === 'high') listedHigh++;
+                    const row = document.createElement('tr');
+                    row.className = 'drug-row transition border-b border-slate-100';
+                    row.innerHTML = `
+                        <td class="px-5 py-3.5">
+                            <div class="flex items-start gap-2">
+                                <span class="risk-dot mt-1.5 ${d.level === 'high' ? 'bg-red-500' : 'bg-emerald-500'}"></span>
+                                <span class="font-semibold text-slate-800 leading-snug">${d.name}</span>
+                            </div>
+                        </td>
+                        <td class="px-5 py-3.5 text-xs text-slate-500 leading-snug">${d.ind}</td>
+                        <td class="px-5 py-3.5"><span class="path-cell mono text-[10px] font-semibold text-blue-700 leading-snug">${d.path}</span></td>
+                        <td class="px-5 py-3.5 text-xs font-medium text-slate-700 leading-snug">${d.dose}</td>
+                        <td class="px-5 py-3.5"><span class="warn-cell text-[11px] leading-snug ${d.level === 'high' ? 'text-rose-700 font-medium' : 'text-slate-600'}">${d.warn}</span></td>
+                        <td class="px-5 py-3.5 text-center align-middle">
+                            <span class="risk-badge ${d.level} inline-block px-2 py-0.5 rounded-md text-[9px] font-bold whitespace-nowrap ${d.level === 'high' ? 'bg-red-50 text-red-700 ring-1 ring-red-200' : 'bg-emerald-50 text-emerald-700 ring-1 ring-emerald-200'}">
+                                ${d.level === 'high' ? 'YÜKSEK' : 'STANDART'}
+                            </span>
+                        </td>`;
+                    listBody.appendChild(row);
+                });
+            });
+
+            if (!filtered.length) {
+                listBody.innerHTML = `<tr><td colspan="6" class="px-5 py-14 text-center text-sm text-slate-400">Aramanızla eşleşen kayıt bulunamadı. Filtreyi temizleyip yeniden deneyin.</td></tr>`;
+            }
+
+            /* Sayaçlar */
+            document.getElementById('totalCount').innerText = clinicalData.length;
+            document.getElementById('listedCount').innerText = filtered.length;
+            document.getElementById('highRiskCount').innerText = listedHigh;
+            document.getElementById('chartTotal').innerText = clinicalData.length;
+
+            /* Yazdırma künyesi */
+            document.getElementById('pScope').innerText = category === 'all' ? 'TÜM KATEGORİLER' : catByKey[category].label;
+            document.getElementById('pCount').innerText = filtered.length;
+            document.getElementById('pHigh').innerText = listedHigh;
+            const qWrap = document.getElementById('pQueryWrap');
+            if (s) { qWrap.classList.remove('hidden'); document.getElementById('pQuery').innerText = filter.trim(); }
+            else { qWrap.classList.add('hidden'); }
+        }
+
+        /* ============ GRAFİK ============ */
+        function initChart() {
+            const counts = countByCat(clinicalData);
+            const ctx = document.getElementById('categoryChart').getContext('2d');
             new Chart(ctx, {
                 type: 'doughnut',
                 data: {
-                    labels: Object.keys(counts),
+                    labels: CATEGORIES.map(c => c.label),
                     datasets: [{
-                        data: Object.values(counts),
-                        backgroundColor: ['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6'],
-                        borderWidth: 0
+                        data: CATEGORIES.map(c => counts[c.key] || 0),
+                        backgroundColor: CATEGORIES.map(c => c.color),
+                        borderWidth: 2,
+                        borderColor: '#ffffff'
                     }]
                 },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    plugins: { legend: { display: false } },
-                    cutout: '70%'
-                }
+                options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, cutout: '72%' }
+            });
+
+            const legend = document.getElementById('chartLegend');
+            CATEGORIES.forEach(c => {
+                const li = document.createElement('li');
+                li.className = 'flex items-center justify-between gap-2';
+                li.innerHTML = `<span class="flex items-center gap-2 text-slate-600"><span class="cat-dot" style="background:${c.color}"></span>${c.label}</span><span class="font-bold text-slate-800">${counts[c.key] || 0}</span>`;
+                legend.appendChild(li);
             });
         }
 
-        searchInput.oninput = (e) => render(e.target.value, activeCat);
-        document.querySelectorAll('.cat-btn').forEach(btn => {
-            btn.onclick = () => {
-                document.querySelectorAll('.cat-btn').forEach(b => b.classList.remove('active'));
-                btn.classList.add('active');
-                activeCat = btn.dataset.cat;
-                render(searchInput.value, activeCat);
-            };
+        /* ============ YAZDIRMA ============ */
+        let prevTitle = document.title;
+        window.addEventListener('beforeprint', () => {
+            prevTitle = document.title;
+            const scope = activeCat === 'all' ? 'TumListe' : activeCat;
+            document.title = 'GogusCerrahisi_IlacRehberi_' + scope;
         });
+        window.addEventListener('afterprint', () => { document.title = prevTitle; });
 
-        window.onload = () => {
+        /* ============ BAŞLAT ============ */
+        searchInput.addEventListener('input', e => render(e.target.value, activeCat));
+        window.addEventListener('load', () => {
             document.getElementById('printDate').innerText = new Date().toLocaleDateString('tr-TR');
+            buildFilters();
             render();
             initChart();
-        };
+        });
     </script>
 </body>
 </html>
